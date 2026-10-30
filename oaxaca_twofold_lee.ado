@@ -1,4 +1,4 @@
-*! oaxaca_twofold_lee_v2 v2.9  -- 2026-08-23
+*! oaxaca_twofold_lee v2.9  -- 2026-08-23
 *! ============================================================================
 *! TWOFOLD OAXACA-BLINDER DECOMPOSITION WITH A LEE (1983) POLYCHOTOMOUS
 *! SELECTION CORRECTION, REPORTED UNDER THE NONCOMMITTAL SCHEME OF NEUMAN AND
@@ -43,7 +43,7 @@
 *! ----------------------------------------------------------------------------
 *! SYNTAX
 *! ----------------------------------------------------------------------------
-*!   oaxaca_twofold_lee_v2 depvar indepvars [if] [in] [aw pw fw], ///
+*!   oaxaca_twofold_lee depvar indepvars [if] [in] [aw pw fw], ///
 *!       by(group) select(zvarlist) [ref(#) status(name) genpfx(name)
 *!        innerboot(#) nowls vrobust nodetail]
 *!
@@ -60,7 +60,7 @@
 *!   dummies and is invariant to which one is omitted.
 *! ============================================================================
 
-program define oaxaca_twofold_lee_v2, eclass
+program define oaxaca_twofold_lee, eclass
     version 16
 
     // ======================================================================
@@ -471,7 +471,7 @@ program define oaxaca_twofold_lee_v2, eclass
     ereturn local  other      "`gf'"
     ereturn local  secondstep = cond("`nowls'" == "", "wls", "ols")
     ereturn local  vcetype    = cond("`vrobust'" == "", "conventional", "robust")
-    ereturn local  cmd        "oaxaca_twofold_lee_v2"
+    ereturn local  cmd        "oaxaca_twofold_lee"
 
     if "`nodetail'" == "" {
         tempname D
