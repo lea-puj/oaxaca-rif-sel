@@ -24,14 +24,9 @@
 *! ----------------------------------------------------------------------------
 *! VERSION HISTORY
 *! ----------------------------------------------------------------------------
-*! v2.9  FIX: Stata prefixes the names of coefficients dropped for collinearity
-*!       with "o.", so e(b) may contain "o.sector_5" instead of "sector_5".
-*!       Matching on the exact name failed with rc=111. Because the set of
-*!       collinear regressors differs across cells, the failure appeared only
-*!       in some of them. Any factor prefix ("o.", "b.", "1b.", "2o.") is now
-*!       stripped before the comparison. A dropped coefficient equals zero and
-*!       contributes zero to both components, which is the correct treatment;
-*!       including it only keeps the dimensions of beta and Xbar aligned.
+*! v2.9  FIX: factor prefixes ("o.", "b.", "1b.") are stripped before matching
+*!       coefficient names, so coefficients dropped for collinearity are
+*!       located correctly. See the note in section 2.6.
 *! v2.8  Exact variance for WageOffers and a second closure check, e(closure2).
 *! v2.7  Fixes the r(111) error caused by reading tempnames after -ereturn post-.
 *! v2.6  Standard error for Difference; vrobust option; diagnostics.
@@ -54,10 +49,8 @@
 *!
 *!   Requires selmlog (Bourguignon, Fournier and Gurgand).
 *!
-*!   Detailed components are not comparable across cells when the set of
-*!   regressors dropped for collinearity differs between them. The aggregate
-*!   components are comparable, because the explained term sums over all
-*!   dummies and is invariant to which one is omitted.
+*!   See -help oaxaca_twofold_lee- for remarks on inference and on the
+*!   comparability of the detailed components.
 *! ============================================================================
 
 program define oaxaca_twofold_lee, eclass
@@ -259,9 +252,8 @@ program define oaxaca_twofold_lee, eclass
         // Under nowls the second stage is an OLS regression of depvar on
         // x_ols and the correction terms. Refitting with -regress, robust-
         // reproduces the selmlog coefficients exactly and only replaces the
-        // variance matrix. This matters because the uncorrected branch of the
-        // analysis uses robust standard errors: without it, the two panels of
-        // each figure are not comparable in terms of inference.
+        // variance matrix, which makes the results comparable with estimates
+        // computed under robust standard errors.
         //------------------------------------------------------------------
         if "`vrobust'" != "" {
             qui regress `depvar' `x_ols' `hvars' if `es`s'', robust
@@ -281,15 +273,12 @@ program define oaxaca_twofold_lee, eclass
         //------------------------------------------------------------------
         // NOTE ON THE "o." PREFIX: Stata prepends it to the names of
         // coefficients dropped for collinearity, so e(b) may contain
-        // "o.sector_5" instead of "sector_5". Matching on the exact name
-        // failed with rc=111, and because the set of collinear regressors
-        // differs across cells, the failure appeared only in some of them.
+        // "o.sector_5" instead of "sector_5" and matching on the exact name
+        // fails. regexr strips any factor prefix: "o.", "b.", "1b.", "2o.".
         //
-        // regexr strips any factor prefix: "o.", "b.", "1b.", "2o.". A dropped
-        // coefficient equals zero and contributes zero to both endowments and
-        // returns, which is the correct treatment; including it only keeps the
-        // dimensions of beta and Xbar aligned. The accounting closure
-        // confirms this.
+        // A dropped coefficient equals zero and contributes zero to both
+        // endowments and returns, which is the correct treatment; including
+        // it only keeps the dimensions of beta and Xbar aligned.
         //------------------------------------------------------------------
         local xpos ""
         local nomit 0
@@ -530,11 +519,7 @@ program define oaxaca_twofold_lee, eclass
     }
     if `flagged' {
         di as err ""
-        di as err "This is the signature of an index whose influence function"
-        di as err "has heavy tails: GE(-1) involves y^(-1), its variance"
-        di as err "depends on E[y^(-2)] and explodes when wages are low."
-        di as err "Do not report these intervals. Use -bootstrap-; if the"
-        di as err "width survives, it is a result about precision."
+        di as err "Delta-method intervals are unreliable here; use -bootstrap-."
     }
 
     //----------------------------------------------------------------------
@@ -558,15 +543,6 @@ program define oaxaca_twofold_lee, eclass
         di as err "The two routes to WageOffers disagree. This points to a"
         di as err "problem in the extraction of theta or of hbar."
     }
-
-    if "`vrobust'" == "" {
-        di as txt _n "Note: standard errors use the nonrobust e(V) of selmlog."
-        di as txt    "If the uncorrected branch of your analysis uses robust"
-        di as txt    "errors, the two are not comparable. Add -vrobust-."
-    }
-    di as txt _n "All standard errors treat the first-stage probabilities as"
-    di as txt    "known and are a LOWER BOUND. Publishable inference should"
-    di as txt    "come from -bootstrap, reps(500)-."
 
     capture matrix drop __b_m __b_f __V_bm __V_bf __th_m __th_f
     capture matrix drop __V_thm __V_thf __xbar_m __xbar_f
