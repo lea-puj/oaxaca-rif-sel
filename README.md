@@ -122,7 +122,9 @@ largest where the first stage is least precise. Publishable inference should
 come from a bootstrap that resamples both stages:
 
 ```stata
-bootstrap, reps(500) seed(12345): oaxaca_twofold_lee_v2 ...
+bootstrap, reps(500) seed(12345):                                       ///
+    oaxaca_twofold_lee_v2 dep_formal $x_ols, by(sex) select($z) ref(0)  ///
+        nowls vrobust
 ```
 
 By default the variance comes from the nonrobust `e(V)` of `selmlog`. If the
@@ -165,4 +167,3 @@ Economic Inequality*, 2(1), 3–10.
 ## License
 
 MIT. See `LICENSE`.
-
