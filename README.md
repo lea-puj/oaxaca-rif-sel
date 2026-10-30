@@ -15,7 +15,7 @@ The command is a wrapper around `selmlog` (Bourguignon, Fournier and Gurgand,
 per group, extracts the coefficient blocks and the covariate means, and
 assembles the decomposition and its delta-method variances.
 
-## What it reports
+## Description
 
 | Component | Expression |
 |---|---|
@@ -57,7 +57,7 @@ oaxaca_twofold_lee_v2 depvar indepvars [if] [in] [aw pw fw],
           nowls vrobust nodetail ]
 ```
 
-### The one thing to get right
+### Restricting the estimation sample
 
 `depvar` must be missing outside the state of interest, and the estimation
 sample must retain all three states. Do **not** restrict with
@@ -71,8 +71,7 @@ oaxaca_twofold_lee_v2 dep_formal $x_ols, by(sex) select($z) ref(0) nowls vrobust
 ```
 
 The command stops with an informative error if `status()` takes fewer than
-three values in the sample, which is the usual symptom of having restricted the
-sample by hand.
+three values in the sample.
 
 ### Options
 
@@ -99,48 +98,6 @@ Scalars: `e(closure)` and `e(closure2)`, the two correctness checks;
 `e(hbar_oth)`, `e(rho_ref)`, `e(rho_oth)`; and `e(var_diff)`.
 
 Macros: `e(ref)`, `e(other)`, `e(secondstep)`, `e(vcetype)`, `e(cmd)`.
-
-## Diagnostics
-
-Two checks print after the table and are stored in `e()`. `closure` is
-`Difference - (Endowments + Returns + Selectivity)` and should be zero to
-machine precision under `nowls`; a nonzero value means the weighting of the
-second stage and of the means disagree, or that a block of coefficients was not
-located. `closure2` is `WageOffers - (Difference - Selectivity)` and verifies
-that the two routes to the wage-offer gap agree, which they will not if the
-extraction of `theta` or `hbar` failed.
-
-A third diagnostic flags any component whose delta-method standard error
-exceeds five times the estimate in absolute value. This is the signature of an
-index with a heavy-tailed influence function rather than of a coding error.
-
-## Inference
-
-All standard errors treat the first-stage probabilities as known and are
-therefore a lower bound on the true sampling variability. The understatement is
-largest where the first stage is least precise. Publishable inference should
-come from a bootstrap that resamples both stages:
-
-```stata
-bootstrap, reps(500) seed(12345):                                       ///
-    oaxaca_twofold_lee_v2 dep_formal $x_ols, by(sex) select($z) ref(0)  ///
-        nowls vrobust
-```
-
-By default the variance comes from the nonrobust `e(V)` of `selmlog`. If the
-uncorrected branch of an analysis uses robust errors, add `vrobust` so that the
-two are comparable.
-
-## Two things to be aware of
-
-Under Lee's parameterisation a negative `rho` implies positive selection,
-because the correction term is strictly positive. Confirm the sign convention
-of your installed version of `selmlog` before interpreting it.
-
-When the set of regressors dropped for collinearity differs across cells, the
-**detailed** components are not comparable between them. The aggregate
-components are, because the explained term sums over all dummies and is
-invariant to which one is omitted.
 
 ## Paper
 
